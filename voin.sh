@@ -453,7 +453,7 @@ export SDL_IM_MODULE=fcitx
 xset +fp /usr/share/fonts/local
 xset fp rehash
 
-killall fcitx pipewire pipewire-media-session pipewire-pulse
+killall fcitx5 pipewire pipewire-media-session pipewire-pulse
 fcitx5 &
 /usr/bin/pipewire &
 /usr/bin/pipewire-media-session &
@@ -464,7 +464,7 @@ session=${1:-awesome}
 #session=awesome
 case $session in
     awesome|awesomewm ) exec awesome;;
-    kde               ) exec startkde;;
+    kde               ) exec startplasma-x11;;
     xfce|xfce4        ) exec startxfce4;;
     # No known session, try to run it as command
     *                 ) exec "${1}";;
