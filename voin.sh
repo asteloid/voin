@@ -178,20 +178,13 @@ fi
 
 # Tweaks
 cat << EOF >> /mnt/etc/sysctl.conf
-fs.file-max = 655360
-kernel.pid_max = 65535
-kernel.kptr_restrict = 1
-fs.suid_dumpable = 0
-kernel.randomize_va_space = 2
-kernel.msgmnb = 65535
-kernel.msgmax = 65535
-kernel.shmmni = 4096
 vm.swappiness = 10
 vm.vfs_cache_pressure = 50
 vm.dirty_background_ratio = 5
 vm.dirty_ratio = 10
 vm.min_free_kbytes = 131072
-net.ipv4.tcp_congestion_control = westwood
+net.core.default_qdisc = cake
+net.ipv4.tcp_congestion_control = bbr
 net.core.somaxconn = 1024
 net.ipv4.tcp_timestamps = 1
 net.ipv4.tcp_no_metrics_save = 1
