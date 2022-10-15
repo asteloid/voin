@@ -17,17 +17,16 @@ HOMEDISK="/dev/sda3"
 uservoid="asteloid"
 passvoid="ramentabetai"
 hostnamevoid="ramenlab"
-user_groups="wheel,sys,audio,input,video,storage,lp,network,users,_pipewire"
+user_groups="wheel,sys,audio,input,video,storage,lp,network,users"
 # enable zram
 en_zram="true"
-##install librewolf set false to install firefox
-install_librewolf="true"
 
 # voidconf
-REPO="https://ftp.swin.edu.au/voidlinux"
+REPO="http://192.168.1.7:8080/cache/xbps/"
+#"https://ftp.swin.edu.au/voidlinux"
 ARCH="x86_64"
 rm_sv=("agetty-tty3" "agetty-tty4" "agetty-tty5" "agetty-tty6")
-en_sv=("NetworkManager" "acpid" "dbus" "elogind" "polkitd" "udevd" "uuidd" "pipewire-pulse" "pipewire" "iwd" "snooze-weekly" "thermald" "tlp" "earlyoom")
+en_sv=("NetworkManager" "acpid" "dbus" "elogind" "polkitd" "udevd" "uuidd" "pipewire-pulse" "pipewire" "iwd" "snooze-weekly" "thermald" "tlp" "earlyoom" "zramen")
 
 # voidpkgs
 sys_pkgs="grub-x86_64-efi base-system dialog cryptsetup lvm2 linux-headers mdadm dracut dracut-network dracut-uefi void-repo-nonfree void-repo-multilib void-repo-multilib-nonfree"
@@ -38,11 +37,10 @@ userland_pkgs="opendoas vsv alacritty pcmanfm NetworkManager git jq curl inetuti
     dbus-elogind dbus-elogind-libs dbus-elogind-x11 elogind polkit-gnome gnome-keyring polkit-elogind \
     exfat-utils gvfs-afc gvfs-mtp gvfs-smb ntfs-3g udisks2 udiskie \
     bsdtar p7zip unrar unzip xz zip zstd zutils \
-    font-alias font-misc-misc font-util fontconfig \
+    font-alias font-misc-misc font-util fontconfig librewolf-bin \
     pavucontrol ffmpeg ffmpegthumbnailer alsa-pipewire alsa-plugins-ffmpeg alsa-plugins-jack alsa-utils \
     flac gst-libav gst-plugins-ugly1 gstreamer-vaapi gstreamer1-pipewire lame libjack-pipewire \
-    libspa-jack pipewire pulseaudio-utils \
-    v4l2loopback vorbis-tools vorbisgain wavpack pkg-config mc xtools \
+    libspa-jack pipewire pulseaudio-utils v4l2loopback pkg-config mc xtools bc micro \
     acpi mpv redshift android-tools android-udev-rules earlyoom micro zramen snooze \
     xdg-desktop-portal xdg-desktop-portal-gtk xdg-user-dirs xdg-user-dirs-gtk"
 jainput_pkgs="fcitx5 fcitx5-configtool fcitx5-mozc fcitx5-gtk+3 fcitx5-qt5"
@@ -64,6 +62,7 @@ mkdir -p /mnt/home
 mount $HOMEDISK /mnt/home
 # efi
 #uncomment to reformat disk #yes | mkfs.vfat -n boot /dev/sda1###
+yes | mkfs.vfat -n boot /dev/sda1
 mkdir -p /mnt/boot/efi
 mount $EFIDISK /mnt/boot/efi
 
@@ -72,7 +71,7 @@ mkdir -p /mnt/var/db/xbps/keys
 cp /var/db/xbps/keys/* /mnt/var/db/xbps/keys/
 
 # Install basesystem
-XBPS_ARCH=$ARCH xbps-install -S -r /mnt -R "$REPO/current" $sys_pkgs --yes
+XBPS_ARCH=$ARCH xbps-install -S -r /mnt -R "$REPO" $sys_pkgs --yes
 
 # Mount the pseudo-filesystems needed for a chroot
 mkdir -p /mnt/sys && mount --rbind /sys /mnt/sys && mount --make-rslave /mnt/sys
@@ -82,11 +81,12 @@ mkdir -p /mnt/proc && mount --rbind /proc /mnt/proc && mount --make-rslave /mnt/
 # Copy the DNS configuration into the new root so that XBPS can still download new packages inside the chroot
 cp /etc/resolv.conf /mnt/etc/
 
+# Set hostname & locale
 echo $hostnamevoid >/mnt/etc/hostname
 echo 'LANG="en_US.UTF-8"' >/mnt/etc/locale.conf
 sed -i '/^#en_US.UTF-8/s/.//' /mnt/etc/default/libc-locales
 
-#Set fstab
+# Set fstab
 uuid_uefi=$(blkid -s UUID -o value $EFIDISK)
 uuid_root=$(blkid -s UUID -o value $ROOTDISK)
 uuid_home=$(blkid -s UUID -o value $HOMEDISK)
@@ -104,20 +104,53 @@ $xchroot ln -sf /usr/share/zoneinfo/Asia/Jakarta /etc/localtime
 # Generate locale files
 $xchroot xbps-reconfigure -f glibc-locales
 
-#Allow users in the wheel group to use sudo
+# Create ignorepkg
+cat << EOF > /mnt/etc/xbps.d/99-ignore.conf
+ignorepkg=sudo
+ignorepkg=wpa_supplicant
+ignorepkg=btrfs-progs
+ignorepkg=f2fs-tools
+ignorepkg=hicolor-icon-theme
+ignorepkg=ipw2100-firmware
+ignorepkg=ipw2200-firmware
+ignorepkg=linux-firmware-amd
+ignorepkg=linux-firmware-broadcom
+ignorepkg=mobile-broadband-provider-info
+ignorepkg=nvi
+ignorepkg=openssh
+ignorepkg=rtkit
+ignorepkg=void-artwork
+ignorepkg=xbacklight
+ignorepkg=xf86-video-amdgpu
+ignorepkg=xf86-video-ati
+ignorepkg=xf86-video-fbdev
+ignorepkg=xf86-video-nouveau
+ignorepkg=xf86-video-vesa
+ignorepkg=xf86-video-vmware
+ignorepkg=zd1211-firmware
+ignorepkg=ksystemstats
+ignorepkg=oxygen
+ignorepkg=plasma-systemmonitor
+ignorepkg=plasma-thunderbolt
+ignorepkg=plasma-workspace-wallpapers
+EOF
+
+# Allow users in the wheel group to use sudo
 #sed -i "s/# %wheel ALL=(ALL:ALL) ALL/%wheel ALL=(ALL) ALL/" /mnt/etc/sudoers
 # opendoas
 cat << EOF >> /mnt/etc/doas.conf
-permit persist :wheel as root
-permit nopass :wheel cmd poweroff
-permit nopass :wheel cmd reboot
-permit nopass :wheel cmd mount
-permit nopass :wheel cmd umount
+permit persist keepenv root
+permit persist keepenv :wheel
+permit nopass $uservoid cmd xbps-install
+permit nopass $uservoid cmd xbps-remove
+permit nopass $uservoid cmd poweroff
+permit nopass $uservoid cmd reboot
 EOF
+
 echo -e 'alias sudo="doas"' >> /mnt/etc/bash/bashrc
 
 # install userpkgs
-$xchroot xbps-install -Suy xbps $xorg_pkgs $intel_pkgs $userland_pkgs $jainput_pkgs $awewm_pkgs $thinkpad_pkgs --yes
+xbps-install -S -r /mnt -R "$REPO" xbps $xorg_pkgs $intel_pkgs $userland_pkgs $jainput_pkgs $awewm_pkgs $thinkpad_pkgs $kde_pkgs --yes
 
 # set NetworkManager to use iwd as a backend
 cat << EOF >> /mnt/etc/NetworkManager/NetworkManager.conf
@@ -127,6 +160,7 @@ plugins=keyfile
 wifi.backend=iwd
 wifi.iwd.autoconnect=yes
 EOF
+
 cat << EOF > /mnt/etc/iwd/main.conf
 [General]
 UseDefaultInterface=true
@@ -163,18 +197,6 @@ echo "$passvoid\n$passvoid" | passwd -q $uservoid
 EOF
 
 $xchroot xbps-reconfigure -fa
-
-# install librewolf, brave, etc...
-# why librewolf? Delete cookies and website data on close, Include uBlockOrigin, Disable disk cache and clear temporary files on close, etc https://librewolf.net/docs/features/
-
-if $install_librewolf
-then
-   curl -O "https://github.com/asteloid/paru-packages/releases/download/1/librewolf-bin-105.0.3_1.x86_64.xbps"
-   xbps-rindex -a *.xbps
-   xbps-install -r /mnt -R $PWD librewolf-bin --yes
-else
-   $xchoot xbps-install -S firefox --yes
-fi
 
 # Tweaks
 cat << EOF >> /mnt/etc/sysctl.conf
@@ -233,46 +255,36 @@ EOF
 
 cat << EOF >> /mnt/etc/tlp.conf
 TLP_ENABLE=1
+TLP_WARN_LEVEL=0
 TLP_DEFAULT_MODE=AC
+TLP_PERSISTENT_DEFAULT=0
 DISK_IDLE_SECS_ON_AC=0
 DISK_IDLE_SECS_ON_BAT=2
-MAX_LOST_WORK_SECS_ON_AC=60
-MAX_LOST_WORK_SECS_ON_BAT=120
-CPU_SCALING_GOVERNOR_ON_AC=powersave
-CPU_SCALING_GOVERNOR_ON_BAT=powersave
-CPU_BOOST_ON_AC=1
-CPU_BOOST_ON_BAT=0
-SCHED_POWERSAVE_ON_AC=0
+MAX_LOST_WORK_SECS_ON_AC=15
+MAX_LOST_WORK_SECS_ON_BAT=60
+CPU_ENERGY_PERF_POLICY_ON_AC=balance_performance
+CPU_ENERGY_PERF_POLICY_ON_BAT=balance_power
+SCHED_POWERSAVE_ON_AC=1
 SCHED_POWERSAVE_ON_BAT=1
 NMI_WATCHDOG=0
-ENERGY_PERF_POLICY_ON_AC=balance_performance
-ENERGY_PERF_POLICY_ON_BAT=powersave
+PLATFORM_PROFILE_ON_AC=balanced
+PLATFORM_PROFILE_ON_BAT=low-power
 DISK_DEVICES="sda"
 DISK_APM_LEVEL_ON_AC="254 254"
 DISK_APM_LEVEL_ON_BAT="128 128"
-SATA_LINKPWR_ON_AC=med_power_with_dipm
-SATA_LINKPWR_ON_BAT=min_power
-AHCI_RUNTIME_PM_TIMEOUT=15
-PCIE_ASPM_ON_AC=default
-PCIE_ASPM_ON_BAT=powersupersave
-WIFI_PWR_ON_AC=off
-WIFI_PWR_ON_BAT=on
-WOL_DISABLE=Y
-SOUND_POWER_SAVE_ON_AC=0
-SOUND_POWER_SAVE_ON_BAT=1
-SOUND_POWER_SAVE_CONTROLLER=Y
-BAY_POWEROFF_ON_BAT=0
-BAY_DEVICE="sr0"
+SATA_LINKPWR_ON_AC="med_power_with_dipm medium_power"
+SATA_LINKPWR_ON_BAT="med_power_with_dipm min_power"
 RUNTIME_PM_ON_AC=on
 RUNTIME_PM_ON_BAT=auto
-RUNTIME_PM_ALL=1
 USB_AUTOSUSPEND=1
-RESTORE_DEVICE_STATE_ON_STARTUP=1
-START_CHARGE_THRESH_BAT0=75
-STOP_CHARGE_THRESH_BAT0=85
-START_CHARGE_THRESH_BAT1=77
-STOP_CHARGE_THRESH_BAT1=87
-DEVICES_TO_DISABLE_ON_LAN_CONNECT="wifi"
+DEVICES_TO_DISABLE_ON_STARTUP="bluetooth nfc wwan"
+DEVICES_TO_DISABLE_ON_BAT="bluetooth nfc wwan"
+DEVICES_TO_DISABLE_ON_BAT_NOT_IN_USE="bluetooth nfc wwan"
+START_CHARGE_THRESH_BAT0=69
+STOP_CHARGE_THRESH_BAT0=86
+START_CHARGE_THRESH_BAT1=69
+STOP_CHARGE_THRESH_BAT1=86
+DEVICES_TO_DISABLE_ON_LAN_CONNECT="wifi wwan"
 DEVICES_TO_ENABLE_ON_LAN_DISCONNECT="wifi"
 EOF
 
@@ -284,6 +296,7 @@ fstrim /boot/efi
 fstrim /
 fstrim /home
 EOF
+
 $xchroot chmod +x /etc/cron.weekly/fstrim
 
 # intel graphics
@@ -291,7 +304,7 @@ $xchroot chmod +x /etc/cron.weekly/fstrim
 cat << EOF > /mnt/etc/X11/xorg.conf.d/20-intel.conf
 Section "Device"
     Identifier    "Intel Graphics"
-    Driver        "intel"
+    Driver         "intel"
     Option        "AccelMethod"    "sna"
     Option        "TearFree"       "true"
     #Option        "DRI"            "3"
@@ -326,8 +339,8 @@ enable yes
 undervolt 0 'CPU' -90
 undervolt 1 'GPU' -30
 undervolt 2 'CPU Cache' -90
-undervolt 3 'System Agent' -90
-undervolt 4 'Analog I/O' -90
+undervolt 3 'System Agent' -40
+undervolt 4 'Analog I/O' -50
 
 # Power Limits Alteration
 # Usage: power ${domain} ${short_power_value} ${long_power_value}
@@ -367,7 +380,7 @@ daemon undervolt:once
 daemon power
 daemon tjoffset
 EOF
-#$xchroot intel-undervolt apply
+
 $xchroot chmod +x /etc/sv/intel-undervolt/run
 $xchroot ln -s /etc/sv/intel-undervolt /etc/runit/runsvdir/default/
 
@@ -376,35 +389,6 @@ $xchroot mkdir -p /etc/fonts/conf.d/
 $xchroot ln -s /usr/share/fontconfig/conf.avail/70-no-bitmaps.conf /etc/fonts/conf.d/
 $xchroot xbps-reconfigure -f fontconfig
 
-cat << EOF > /mnt/etc/xbps.d/99-ignore.conf
-ignorepkg=sudo
-ignorepkg=wpa_supplicant
-ignorepkg=btrfs-progs
-ignorepkg=f2fs-tools
-ignorepkg=hicolor-icon-theme
-ignorepkg=ipw2100-firmware
-ignorepkg=ipw2200-firmware
-ignorepkg=linux-firmware-amd
-ignorepkg=linux-firmware-broadcom
-ignorepkg=mobile-broadband-provider-info
-ignorepkg=nvi
-ignorepkg=openssh
-ignorepkg=rtkit
-ignorepkg=void-artwork
-ignorepkg=xbacklight
-ignorepkg=xf86-video-amdgpu
-ignorepkg=xf86-video-ati
-ignorepkg=xf86-video-fbdev
-ignorepkg=xf86-video-nouveau
-ignorepkg=xf86-video-vesa
-ignorepkg=xf86-video-vmware
-ignorepkg=zd1211-firmware
-ignorepkg=ksystemstats
-ignorepkg=oxygen
-ignorepkg=plasma-systemmonitor
-ignorepkg=plasma-thunderbolt
-ignorepkg=plasma-workspace-wallpapers
-EOF
 unneed_pkgs="sudo wpa_supplicant btrfs-progs f2fs-tools hicolor-icon-theme ipw2100-firmware ipw2200-firmware linux-firmware-amd \
     linux-firmware-broadcom mobile-broadband-provider-info nvi openssh rtkit void-artwork xbacklight \
     xf86-video-amdgpu xf86-video-ati xf86-video-fbdev xf86-video-nouveau xf86-video-vesa xf86-video-vmware zd1211-firmware \
@@ -435,7 +419,7 @@ fi
 cat << EOF > /mnt/etc/skel/.xinitrc
 #!/usr/bin/env bash
 # dbus-launch
-if which dbus-launch >/dev/null && test -z "$DBUS_SESSION_BUS_ADDRESS"; then
+if which dbus-launch >/dev/null && test -z \$DBUS_SESSION_BUS_ADDRESS; then
     eval `dbus-launch --sh-syntax --exit-with-session`
 fi
 
@@ -450,28 +434,31 @@ export SDL_IM_MODULE=fcitx
 # using it to set paths
 [ -e ~/.xprofile ] && . ~/.xprofile
 
-xset +fp /usr/share/fonts/local
-xset fp rehash
+#xset +fp /usr/share/fonts/local
+#xset fp rehash
 
-killall fcitx5 pipewire pipewire-media-session pipewire-pulse
 fcitx5 &
 /usr/bin/pipewire &
 /usr/bin/pipewire-media-session &
 /usr/bin/pipewire-pulse &
 
 # start the window manager
-session=${1:-awesome}
+session=${1:-kde}
 #session=awesome
 case $session in
-    awesome|awesomewm ) exec awesome;;
-    kde               ) exec startplasma-x11;;
-    xfce|xfce4        ) exec startxfce4;;
+    awesome|awesomewm )
+        exec awesome;;
+    kde )
+        export DESKTOP_SESSION=plasma
+        exec startplasma-x11;;
+    xfce|xfce4 )
+        exec startxfce4;;
     # No known session, try to run it as command
-    *                 ) exec "${1}";;
+    * ) exec "${1}";;
 esac
 EOF
 
-$xchroot mkdir -p /home/$uservoid && cp -avr /etc/skel/.xinitrc /home/$uservoid/
+$xchroot chmod +x /etc/skel/.xinitrc
 
 #chroot_actions(){
 #    
