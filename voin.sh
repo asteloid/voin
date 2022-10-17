@@ -336,11 +336,11 @@ enable yes
 # Usage: undervolt ${index} ${display_name} ${undervolt_value}
 # Example: undervolt 2 'CPU Cache' -25.84
 
-undervolt 0 'CPU' -90
-undervolt 1 'GPU' -30
-undervolt 2 'CPU Cache' -90
-undervolt 3 'System Agent' -40
-undervolt 4 'Analog I/O' -50
+undervolt 0 'CPU' -153
+undervolt 1 'GPU' -115
+undervolt 2 'CPU Cache' -80
+undervolt 3 'System Agent' 0
+undervolt 4 'Analog I/O' 0
 
 # Power Limits Alteration
 # Usage: power ${domain} ${short_power_value} ${long_power_value}
