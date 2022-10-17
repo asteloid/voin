@@ -1,0 +1,7 @@
+XBPS_ALLOW_RESTRICTED=yes
+XBPS_MIRROR=https://ftp.swin.edu.au/voidlinux/current
+XBPS_CFLAGS="-O3 -march=native -mtune=native -pipe"
+XBPS_CXXFLAGS="${XBPS_CFLAGS}"
+XBPS_FFLAGS="${XBPS_CFLAGS}"
+XBPS_LDFLAGS="${XBPS_CFLAGS}"
+XBPS_MAKEJOBS=$(nproc)
