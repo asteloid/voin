@@ -51,6 +51,7 @@ kde_pkgs="plasma-desktop bluedevil breeze-gtk kde-gtk-config5 kdeplasma-addons5 
 # if you are running a kernel prior to linux5.17 (e.g. linux-lts) and want to use recalibration or your model is older, read: https://linrunner.de/tlp/installation/arch.html
 # add tp_smapi-dkms acpi_call-dkms if you are running a kernel/linux-lts/linux5.16--
 thinkpad_pkgs="lm_sensors tlp tlp-rdw thermald smartmontools intel-undervolt"
+astel_pkgs="linux6.0-astel-tt linux6.0-astel-tt-headers"
 
 # Prepare disk
 # root
@@ -150,7 +151,7 @@ EOF
 echo -e 'alias sudo="doas"' >> /mnt/etc/bash/bashrc
 
 # install userpkgs
-xbps-install -S -r /mnt -R "$REPO" xbps $xorg_pkgs $intel_pkgs $userland_pkgs $jainput_pkgs $awewm_pkgs $thinkpad_pkgs $kde_pkgs --yes
+xbps-install -S -r /mnt -R "$REPO" xbps $xorg_pkgs $intel_pkgs $userland_pkgs $jainput_pkgs $awewm_pkgs $thinkpad_pkgs $kde_pkgs $astel_pkgs --yes
 
 # set NetworkManager to use iwd as a backend
 cat << EOF >> /mnt/etc/NetworkManager/NetworkManager.conf
