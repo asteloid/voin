@@ -17,7 +17,7 @@ HOMEDISK="/dev/sda3"
 uservoid="asteloid"
 passvoid="ramentabetai"
 hostnamevoid="ramenlab"
-user_groups="wheel,sys,audio,input,video,storage,lp,network,users"
+user_groups="wheel,sys,audio,input,video,storage,lp,network,users,_pipewire"
 # enable zram
 en_zram="true"
 
