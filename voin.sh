@@ -171,7 +171,7 @@ EOF
 #$xchroot ln -s /usr/libexec/dhcpcd-hooks/10-wpa_supplicant /usr/share/dhcpcd/hooks/10-wpa_supplicant
 
 # Grub
-$xchroot sed -i '/^GRUB_CMDLINE_LINUX_DEFAULT=/c\GRUB_CMDLINE_LINUX_DEFAULT="loglevel=0 console=tty2 udev.log_level=0 vt.global_cursor_default=0 mitigations=off nowatchdog msr.allow_writes=on pcie_aspm=force module.sig_unenforce intel_idle.max_cstate=1 cryptomgr.notests initcall_debug intel_iommu=igfx_off no_timer_check noreplace-smp page_alloc.shuffle=1 rcupdate.rcu_expedited=1 tsc=reliable ipv6.disable=1"' /etc/default/grub
+$xchroot sed -i '/^GRUB_CMDLINE_LINUX_DEFAULT=/c\GRUB_CMDLINE_LINUX_DEFAULT="loglevel=0 console=tty2 udev.log_level=0 vt.global_cursor_default=0 mitigations=off nowatchdog msr.allow_writes=on pcie_aspm=force module.sig_unenforce intel_idle.max_cstate=1 cryptomgr.notests initcall_debug intel_iommu=igfx_off no_timer_check noreplace-smp page_alloc.shuffle=1 rcupdate.rcu_expedited=1 tsc=reliable"' /etc/default/grub
 $xchroot grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=voidlinux --recheck
 $xchroot grub-mkconfig -o /boot/grub/grub.cfg
 
@@ -246,10 +246,6 @@ net.ipv4.icmp_ignore_bogus_error_responses = 1
 net.ipv4.tcp_syncookies = 0
 net.ipv4.conf.default.rp_filter = 1
 net.ipv4.conf.all.rp_filter = 1
-net.ipv6.route.flush = 1
-net.ipv6.conf.all.disable_ipv6 = 1
-net.ipv6.conf.default.disable_ipv6 = 1
-net.ipv6.conf.lo.disable_ipv6 = 1
 EOF
 
 cat << EOF >> /mnt/etc/tlp.conf
